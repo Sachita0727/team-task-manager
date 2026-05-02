@@ -95,8 +95,8 @@ app.post("/tasks", auth, async (req, res) => {
     const { title, assignedTo, project, dueDate, status } = req.body;
 
     // Convert 'assignedTo' and 'project' to ObjectId
-    const assignedToId = mongoose.Types.ObjectId(assignedTo);
-    const projectId = mongoose.Types.ObjectId(project);
+    const assignedToId = new mongoose.Types.ObjectId(assignedTo);
+    const projectId = new mongoose.Types.ObjectId(project);
     const taskStatus = status || "todo"; // Default value to "todo" if not provided
 
     const task = await Task.create({
