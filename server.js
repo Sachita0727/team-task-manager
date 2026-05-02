@@ -95,7 +95,19 @@ app.get("/projects", auth, async (req, res) => {
 // CREATE TASK
 app.post("/tasks", auth, async (req, res) => {
   try {
-    const task = await Task.create(req.body);
+    // Default status should be 'todo'
+    const { title, assignedTo, project, dueDate, status } = req.body;
+    
+    const taskStatus = status || "todo"; // Set to "todo" if no status is provided
+
+    const task = await Task.create({
+      title,
+      assignedTo,
+      project,
+      dueDate,
+      status: taskStatus // Default value to 'todo'
+    });
+
     res.json(task);
   } catch (err) {
     res.status(500).send(err.message);
