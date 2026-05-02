@@ -73,7 +73,16 @@ app.get("/dashboard", auth, (req, res) => {
 // CREATE PROJECT (Admin only)
 app.post("/projects", auth, admin, async (req, res) => {
   try {
-    const project = await Project.create(req.body);
+    const { name, members } = req.body;
+
+    // Convert members' IDs to ObjectId
+    const membersIds = members.map(member => new mongoose.Types.ObjectId(member));
+
+    const project = await Project.create({
+      name,
+      members: membersIds  // Use ObjectId array for members
+    });
+
     res.json(project);
   } catch (err) {
     res.status(500).send(err.message);
