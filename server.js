@@ -10,13 +10,17 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 const Project = require("./models/Project");
+const Task = require("./models/Task");
 const auth = require("./middleware/auth");
 const admin = require("./middleware/admin");
 
-// ROUTES
+// ROOT
 app.get("/", (req, res) => {
   res.send("API Running");
 });
+
+
+// ================= AUTH =================
 
 // SIGNUP
 app.post("/signup", async (req, res) => {
@@ -43,11 +47,9 @@ app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-
     if (!user) return res.status(400).send("User not found");
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) return res.status(400).send("Wrong password");
 
     const token = jwt.sign(
@@ -61,10 +63,15 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// DASHBOARD (Protected)
+
+// ================= DASHBOARD =================
+
 app.get("/dashboard", auth, (req, res) => {
   res.send("Welcome user " + req.user.id);
 });
+
+
+// ================= PROJECT =================
 
 // CREATE PROJECT (Admin only)
 app.post("/projects", auth, admin, async (req, res) => {
@@ -82,15 +89,10 @@ app.get("/projects", auth, async (req, res) => {
   res.json(projects);
 });
 
-// DB CONNECT + SERVER START
-mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-  console.log("DB Connected");
-  app.listen(5000, () => console.log("Server started on port 5000"));
-})
-.catch(err => console.log(err));
 
-const Task = require("./models/Task");
+// ================= TASK =================
+
+// CREATE TASK
 app.post("/tasks", auth, async (req, res) => {
   try {
     const task = await Task.create(req.body);
@@ -99,10 +101,14 @@ app.post("/tasks", auth, async (req, res) => {
     res.status(500).send(err.message);
   }
 });
+
+// GET ALL TASKS
 app.get("/tasks", auth, async (req, res) => {
   const tasks = await Task.find().populate("assignedTo project");
   res.json(tasks);
 });
+
+// UPDATE TASK
 app.put("/tasks/:id", auth, async (req, res) => {
   const task = await Task.findByIdAndUpdate(
     req.params.id,
@@ -111,3 +117,30 @@ app.put("/tasks/:id", auth, async (req, res) => {
   );
   res.json(task);
 });
+
+// OVERDUE TASKS
+app.get("/tasks/overdue", auth, async (req, res) => {
+  const today = new Date();
+
+  const tasks = await Task.find({
+    dueDate: { $lt: today },
+    status: { $ne: "done" }
+  });
+
+  res.json(tasks);
+});
+
+
+// ================= DB CONNECT =================
+
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {
+  console.log("DB Connected");
+
+  const PORT = process.env.PORT || 5000;
+
+  app.listen(PORT, () => {
+    console.log("Server running on port " + PORT);
+  });
+})
+.catch(err => console.log(err));
