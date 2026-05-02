@@ -19,7 +19,6 @@ app.get("/", (req, res) => {
   res.send("API Running");
 });
 
-
 // ================= AUTH =================
 
 // SIGNUP
@@ -63,13 +62,11 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
 // ================= DASHBOARD =================
 
 app.get("/dashboard", auth, (req, res) => {
   res.send("Welcome user " + req.user.id);
 });
-
 
 // ================= PROJECT =================
 
@@ -89,7 +86,6 @@ app.get("/projects", auth, async (req, res) => {
   res.json(projects);
 });
 
-
 // ================= TASK =================
 
 // CREATE TASK
@@ -97,13 +93,16 @@ app.post("/tasks", auth, async (req, res) => {
   try {
     // Default status should be 'todo'
     const { title, assignedTo, project, dueDate, status } = req.body;
-    
-    const taskStatus = status || "todo"; // Set to "todo" if no status is provided
+
+    // Convert 'assignedTo' and 'project' to ObjectId
+    const assignedToId = mongoose.Types.ObjectId(assignedTo);
+    const projectId = mongoose.Types.ObjectId(project);
+    const taskStatus = status || "todo"; // Default value to "todo" if not provided
 
     const task = await Task.create({
       title,
-      assignedTo,
-      project,
+      assignedTo: assignedToId,
+      project: projectId,
       dueDate,
       status: taskStatus // Default value to 'todo'
     });
@@ -122,12 +121,16 @@ app.get("/tasks", auth, async (req, res) => {
 
 // UPDATE TASK
 app.put("/tasks/:id", auth, async (req, res) => {
-  const task = await Task.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(task);
+  try {
+    const task = await Task.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.json(task);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 // OVERDUE TASKS
@@ -142,17 +145,16 @@ app.get("/tasks/overdue", auth, async (req, res) => {
   res.json(tasks);
 });
 
-
 // ================= DB CONNECT =================
 
 mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-  console.log("DB Connected");
+  .then(() => {
+    console.log("DB Connected");
 
-  const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 5000;
 
-  app.listen(PORT, () => {
-    console.log("Server running on port " + PORT);
-  });
-})
-.catch(err => console.log(err));
+    app.listen(PORT, () => {
+      console.log("Server running on port " + PORT);
+    });
+  })
+  .catch(err => console.log(err));
