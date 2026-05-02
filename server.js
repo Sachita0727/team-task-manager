@@ -90,9 +90,15 @@ app.post("/projects", auth, admin, async (req, res) => {
 });
 
 // GET PROJECTS
-app.get("/projects", auth, async (req, res) => {
-  const projects = await Project.find().populate("members");
-  res.json(projects);
+app.get("/tasks/overdue", auth, async (req, res) => {
+  const today = new Date();
+
+  const tasks = await Task.find({
+    dueDate: { $lt: today }, // Tasks with due date earlier than today
+    status: { $ne: "done" }  // Tasks that are not marked as "done"
+  });
+
+  res.json(tasks);
 });
 
 // ================= TASK =================
