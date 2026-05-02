@@ -91,10 +91,14 @@ app.get("/projects", auth, async (req, res) => {
 // CREATE TASK
 app.post("/tasks", auth, async (req, res) => {
   try {
-    // Default status should be 'todo'
     const { title, assignedTo, project, dueDate, status } = req.body;
 
-    // Convert 'assignedTo' and 'project' to ObjectId
+    // Validate ObjectId for assignedTo and project
+    if (!mongoose.Types.ObjectId.isValid(assignedTo) || !mongoose.Types.ObjectId.isValid(project)) {
+      return res.status(400).send("Invalid ObjectId for assignedTo or project.");
+    }
+
+    // Use 'new' for ObjectId conversion
     const assignedToId = new mongoose.Types.ObjectId(assignedTo);
     const projectId = new mongoose.Types.ObjectId(project);
     const taskStatus = status || "todo"; // Default value to "todo" if not provided
