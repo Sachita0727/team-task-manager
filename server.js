@@ -76,11 +76,11 @@ app.post("/projects", auth, admin, async (req, res) => {
     const { name, members } = req.body;
 
     // Convert members' IDs to ObjectId
-    const membersIds = members.map(member => new mongoose.Types.ObjectId(member));
+    const membersIds = members.map((member) => new mongoose.Types.ObjectId(member));
 
     const project = await Project.create({
       name,
-      members: membersIds  // Use ObjectId array for members
+      members: membersIds // Use ObjectId array for members
     });
 
     res.json(project);
@@ -90,15 +90,13 @@ app.post("/projects", auth, admin, async (req, res) => {
 });
 
 // GET PROJECTS
-app.get("/tasks/overdue", auth, async (req, res) => {
-  const today = new Date();
-
-  const tasks = await Task.find({
-    dueDate: { $lt: today }, // Tasks with due date earlier than today
-    status: { $ne: "done" }  // Tasks that are not marked as "done"
-  });
-
-  res.json(tasks);
+app.get("/projects", auth, async (req, res) => {
+  try {
+    const projects = await Project.find().populate("members"); // Fetch projects with members populated
+    res.json(projects);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 // ================= TASK =================
@@ -116,7 +114,7 @@ app.post("/tasks", auth, async (req, res) => {
     // Use 'new' for ObjectId conversion
     const assignedToId = new mongoose.Types.ObjectId(assignedTo);
     const projectId = new mongoose.Types.ObjectId(project);
-    const taskStatus = status || "todo"; // Default value to "todo" if not provided
+    const taskStatus = status || "todo"; // Default value to 'todo' if not provided
 
     const task = await Task.create({
       title,
@@ -134,8 +132,12 @@ app.post("/tasks", auth, async (req, res) => {
 
 // GET ALL TASKS
 app.get("/tasks", auth, async (req, res) => {
-  const tasks = await Task.find().populate("assignedTo project");
-  res.json(tasks);
+  try {
+    const tasks = await Task.find().populate("assignedTo project");
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 // UPDATE TASK
@@ -157,8 +159,8 @@ app.get("/tasks/overdue", auth, async (req, res) => {
   const today = new Date();
 
   const tasks = await Task.find({
-    dueDate: { $lt: today },
-    status: { $ne: "done" }
+    dueDate: { $lt: today }, // Tasks with due date earlier than today
+    status: { $ne: "done" } // Tasks that are not marked as "done"
   });
 
   res.json(tasks);
